@@ -1,0 +1,1490 @@
+# imports
+
+import dataset
+import pygame
+
+from pygame import mixer
+from screeninfo import get_monitors as monitors
+
+# variables
+
+accountsdb = dataset.connect('sqlite:///accounts.db')
+
+credentials = accountsdb['credentials']
+tags = accountsdb['tags']
+sessions = accountsdb['sessions']
+
+# colors
+
+# classes
+
+class serverSide():
+    def loadwindow():
+        screen = pygame.display.set_mode((750, 500))
+        pygame.display.set_caption('Beach Blitz')
+        icon = pygame.image.load(r'assets\gfx\logo225.png')
+        pygame.display.set_icon(icon)
+        playerPortal.mainportal(screen)
+
+    def createaccount(screen, userdata):
+        credentials.insert(dict(username=userdata[1], displayname=userdata[2], password=userdata[3], email=userdata[4], phone=userdata[5], mfaenabled=False, tags='user'))
+        serverSide.startsession(screen, userdata)
+
+    def startsession(screen, userdata):
+        sessionpacket = ['session.id.1', userdata[1]]
+        mainMenu.loadmenu(screen, sessionpacket)
+
+class devTools():
+    def assigntag(screen, sessionpacket, username, tag):
+        tagslist = list(dict(credentials.find_one(username=username)).values())[7].split(', ')
+        if tag in tagslist:
+            mainMenu.loadmenu(screen, sessionpacket)
+        else:
+            tagslist.append(tag)
+            tagsstr = str(', '.join(tagslist))
+            credentials.update(dict(username=username, tags=tagsstr), ['username'])
+            mainMenu.loadmenu(screen, sessionpacket)
+            
+
+class playerPortal():
+    def mainportal(screen):
+        while True:
+            screen.fill((26, 26, 26))
+            logo = pygame.image.load(r'assets\gfx\logo225.png')
+            logo_rect = logo.get_rect()
+            logo_rect.top = 50
+            logo_rect.centerx = 750/2
+            screen.blit(logo, logo_rect)
+
+            get_started_button = pygame.Rect(0, 0, 650, 50)
+            log_in_button = pygame.Rect(0, 0, 650, 50)
+            get_started_button.bottom = 375
+            log_in_button.bottom = 450
+            get_started_button.centerx = 750/2
+            log_in_button.centerx = 750/2
+
+            pygame.draw.rect(screen, (0, 255, 255), get_started_button, border_radius=30)
+            pygame.draw.rect(screen, (255, 255, 0), log_in_button, border_radius=30)
+
+            mouse = pygame.mouse.get_pos()
+
+            if get_started_button.left <= mouse[0] <= get_started_button.right and get_started_button.top <= mouse[1] <= get_started_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), get_started_button, border_radius=25)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), get_started_button, border_radius=25)
+
+            if log_in_button.left <= mouse[0] <= log_in_button.right and log_in_button.top <= mouse[1] <= log_in_button.bottom:
+                pygame.draw.rect(screen, (229, 229, 229), log_in_button, border_radius=25)
+            else:
+                pygame.draw.rect(screen, (203, 203, 203), log_in_button, border_radius=25)
+
+            pygame.font.init()
+            button_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            get_started_text = button_font.render('get started', True, (229, 229, 229))
+            log_in_text = button_font.render('log in', True, (26, 26, 26))
+
+            get_started_text_rect = get_started_text.get_rect()
+            log_in_text_rect = log_in_text.get_rect()
+
+            get_started_text_rect.center = get_started_button.center
+            log_in_text_rect.center = log_in_button.center
+
+            screen.blit(get_started_text, get_started_text_rect)
+            screen.blit(log_in_text, log_in_text_rect)
+
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if get_started_button.left <= mouse[0] <= get_started_button.right and get_started_button.top <= mouse[1] <= get_started_button.bottom:
+                        playerPortal.getstarted1(screen)
+                    if log_in_button.left <= mouse[0] <= log_in_button.right and log_in_button.top <= mouse[1] <= log_in_button.bottom:
+                        playerPortal.login1(screen)
+
+    def getstarted1(screen):
+        username_input = ''
+        error_code = ''
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render('for starters, pick a username!', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render('confirm', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        if 1 < len(username_input) < 33:
+                            playerPortal.getstarted2(screen, username_input)
+                        else:
+                            error_code = 'usernames must be between 2 and 32 in length.'
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '_']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        playerPortal.mainportal(screen)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        if 1 < len(username_input) < 33:
+                            playerPortal.getstarted2(screen, username_input)
+                        else:
+                            error_code = 'usernames must be between 2 and 32 in length.'
+                    
+    def getstarted2(screen, username):
+        username_input = ''
+        error_code = ''
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render('great! now, select a display name!', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render('confirm', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        if 1 < len(username_input) < 33:
+                            playerPortal.getstarted3(screen, username, username_input)
+                        else:
+                            error_code = 'display names must be between 2 and 32 in length.'
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '~', '`', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '-', '+', '=', '{', '}', '[', ']', '|', ':', ';', '"', '\'', '<', '>', ',', '.', '/', '\\', '?', ' ']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        playerPortal.getstarted1(screen)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        if 1 < len(username_input) < 33:
+                            playerPortal.getstarted3(screen, username, username_input)
+                        else:
+                            error_code = 'display names must be between 2 and 32 in length.'
+
+    def getstarted3(screen, username, displayname):
+        username_input = ''
+        error_code = ''
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render('nice! now choose a password!', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render('confirm', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        if 7 < len(username_input) < 33:
+                            playerPortal.getstarted4(screen, username, displayname, username_input)
+                        else:
+                            error_code = 'passwords must be between 8 and 32 in length.'
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '~', '`', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '-', '+', '=', '{', '}', '[', ']', '|', ':', ';', '"', '\'', '<', '>', ',', '.', '/', '\\', '?', ' ']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        playerPortal.getstarted2(screen, username)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        if 7 < len(username_input) < 33:
+                            playerPortal.getstarted4(screen, username, displayname, username_input)
+                        else:
+                            error_code = 'passwords must be between 8 and 32 in length.'
+
+    def getstarted4(screen, username, displayname, password):
+        username_input = ''
+        error_code = ''
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render('epic! optionally, add an email!', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            if not username_input:
+                next = 'skip'
+            else:
+                next = 'confirm'
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render(next, True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        if not username_input:
+                            playerPortal.getstarted5(screen, username, displayname, password, None)
+                        else:
+                            if '@' in username_input:
+                                playerPortal.getstartedemailverify(screen, username, displayname, password, username_input)
+                            else:
+                                error_code = 'please enter a valid email.'
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '~', '`', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '-', '+', '=', '{', '}', '[', ']', '|', ':', ';', '"', '\'', '<', '>', ',', '.', '/', '\\', '?', ' ']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        playerPortal.getstarted3(screen, username, displayname)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        if not username_input:
+                            playerPortal.getstarted5(screen, username, displayname, password, None)
+                        else:
+                            if '@' in username_input:
+                                playerPortal.getstartedemailverify(screen, username, displayname, password, username_input)
+                            else:
+                                error_code = 'please enter a valid email.'
+
+    def getstartedemailverify(screen, username, displayname, password, email):
+        pass # verify your email!
+
+    def getstarted5(screen, username, displayname, password, email):
+        userdata = [None, username, displayname, password, email, None]
+        serverSide.createaccount(screen, userdata)
+
+    def getstartedphoneverify(screen, username, displayname, password, email, phone):
+        pass # verify your phone!
+
+    def login1(screen):
+        username_input = ''
+        error_code = ''
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render('what is your username?', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render('confirm', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        acc = list(credentials.find(username=username_input))
+
+                        if not acc:
+                            error_code = 'there is no account with that username.'
+                        else:
+                            playerPortal.login2(screen, username_input)
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '_']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        playerPortal.mainportal(screen)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        acc = list(credentials.find(username=username_input))
+                        if not acc:
+                            error_code = 'there is no account with that username.'
+                        else:
+                            playerPortal.login2(screen, username_input)
+
+    def login2(screen, username):
+        username_input = ''
+        error_code = ''
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render('what is your password?', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render('confirm', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        accpassword = list(dict(credentials.find_one(username=username)).values())[3]
+                        if accpassword == username_input:
+                            serverSide.startsession(screen, list(dict(credentials.find_one(username=username)).values()))
+                        else:
+                            error_code = 'username and password do not match.'
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '~', '`', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '-', '+', '=', '{', '}', '[', ']', '|', ':', ';', '"', '\'', '<', '>', ',', '.', '/', '\\', '?', ' ']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        playerPortal.login1(screen)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        accpassword = list(dict(credentials.find(username=username)).values())[3]
+                        if accpassword == username_input:
+                            serverSide.startsession(screen, list(dict(credentials.find(username=username)).values()))
+                        else:
+                            error_code = 'username and password do not match.'
+
+    def loginmfa():
+        pass # prompts the user to enter their multiple factor authenticator code
+
+class mainMenu():
+    def loadmenu(screen, sessionpacket):
+        pygame.display.set_mode((750, 500), pygame.RESIZABLE)
+        while True:
+            screen.fill((26, 26, 26))
+            screensize = screen.get_size()
+            title_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', screensize[1]//6)
+            title_text = title_font.render('beach blitz', True, (229, 229, 229))
+            title_rect = title_text.get_rect()
+            title_rect.top = screensize[1]//6
+            title_rect.centerx = screensize[0]//2
+            screen.blit(title_text, title_rect)
+
+            alltags = list(dict(credentials.find_one(username=sessionpacket[1])).values())[7]
+
+            if 'alohaz' in alltags:
+                subtitle = 'surfer\nboy'
+                subtitle_color = (85, 166, 197)
+            elif 'miah' in alltags:
+                subtitle = 'meow'
+                subtitle_color = (196, 86, 118)
+            elif 'dev' in alltags:
+                subtitle = 'developer mode'
+                subtitle_color = (240, 200, 91)
+            elif 'artist' in alltags:
+                subtitle = 'artist mode'
+                subtitle_color = (255, 147, 147)
+            else:
+                subtitle = ''
+                subtitle_color = (0, 0, 0)
+
+            subtitle_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', screensize[1]//18)
+            subtitle_text = subtitle_font.render(subtitle, True, subtitle_color)
+            subtitle_rect = subtitle_text.get_rect()
+            subtitle_rect.top = (screensize[1]//6)*2
+            subtitle_rect.centerx = screensize[0]//2
+            screen.blit(subtitle_text, subtitle_rect)
+
+            outfits_border = pygame.Rect(0, 0, (screensize[0]-150)//3, screensize[1]//3)
+            play_border = pygame.Rect(0, 0, (screensize[0]-150)//3, screensize[1]//3)
+            options_border = pygame.Rect(0, 0, (screensize[0]-150)//3, screensize[1]//3)
+
+            outfits_border.top = screensize[1]//2
+            play_border.top = screensize[1]//2
+            options_border.top = screensize[1]//2
+
+            play_border.centerx = screensize[0]//2
+            outfits_border.left = 50
+            options_border.left = play_border.right+25
+
+            pygame.draw.rect(screen, (52, 52, 52), outfits_border, border_radius=outfits_border.height//10)
+            pygame.draw.rect(screen, (52, 52, 52), play_border, border_radius=outfits_border.height//10)
+            pygame.draw.rect(screen, (52, 52, 52), options_border, border_radius=outfits_border.height//10)
+
+
+            outfits_button = pygame.Rect(0, 0, ((screensize[0]-150)//3)-50, screensize[1]//3-50)
+            play_button = pygame.Rect(0, 0, ((screensize[0]-150)//3)-50, screensize[1]//3-50)
+            options_button = pygame.Rect(0, 0, ((screensize[0]-150)//3)-50, screensize[1]//3-50)
+
+            outfits_button.center = outfits_border.center
+            play_button.center = play_border.center
+            options_button.center = options_border.center
+
+            pygame.draw.rect(screen, (0, 255, 255), outfits_button, border_radius=outfits_button.height//10)
+
+            mouse = pygame.mouse.get_pos()
+
+            if outfits_button.left <= mouse[0] <= outfits_button.right and outfits_button.top <= mouse[1] <= outfits_button.bottom:
+                pygame.draw.rect(screen, (135, 201, 176), outfits_button, border_radius=outfits_button.height//10)
+            else:
+                pygame.draw.rect(screen, (95, 204, 160), outfits_button, border_radius=outfits_button.height//10)
+
+            if play_button.left <= mouse[0] <= play_button.right and play_button.top <= mouse[1] <= play_button.bottom:
+                pygame.draw.rect(screen, (132, 180, 111), play_button, border_radius=play_button.height//10)
+            else:
+                pygame.draw.rect(screen, (102, 185, 63), play_button, border_radius=play_button.height//10)
+
+            if options_button.left <= mouse[0] <= options_button.right and options_button.top <= mouse[1] <= options_button.bottom:
+                pygame.draw.rect(screen, (209, 132, 115), options_button, border_radius=options_button.height//10)
+            else:
+                pygame.draw.rect(screen, (211, 100, 75), options_button, border_radius=options_button.height//10)
+
+            button_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', play_button.height//3)
+
+            outfits_text = button_font.render('outfits', True, (229, 229, 229))
+            play_text = button_font.render('play', True, (229, 229, 229))
+            options_text = button_font.render('options', True, (229, 229, 229))
+
+            outfits_text_rect = outfits_text.get_rect()
+            play_text_rect = play_text.get_rect()
+            options_text_rect = options_text.get_rect()
+
+            outfits_text_rect.center = outfits_button.center
+            play_text_rect.center = play_button.center
+            options_text_rect.center = options_button.center
+
+            screen.blit(outfits_text, outfits_text_rect)
+            screen.blit(play_text, play_text_rect)
+            screen.blit(options_text, options_text_rect)
+
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.VIDEORESIZE:
+                    width, height = eve.size
+                    if width < 750:
+                        width = 750
+                    if height < 500:
+                        height = 500
+                    pygame.display.set_mode((width, height), pygame.RESIZABLE)
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if outfits_button.left <= mouse[0] <= outfits_button.right and outfits_button.top <= mouse[1] <= outfits_button.bottom:
+                        outfitsMenu.customizemenu(screen, sessionpacket)
+                    if play_button.left <= mouse[0] <= play_button.right and play_button.top <= mouse[1] <= play_button.bottom:
+                        pass
+                    if options_button.left <= mouse[0] <= options_button.right and options_button.top <= mouse[1] <= options_button.bottom:
+                        optionsMenu.loadoptions(screen, sessionpacket)
+
+class outfitsMenu():
+    def shopmenu(screen, sessionpacket):
+        while True:
+            screen.fill((26, 26, 26))
+            screensize = screen.get_size()
+            main_rect = pygame.Rect(100, 100, screensize[0]-200, screensize[1]-200)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=main_rect.height//10)
+
+            header_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', main_rect.height//10)
+            header_text = header_font.render('shop', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+
+            arrowleft = pygame.image.load(r'assets\gfx\arrowleftidle.png')
+            arrowright = pygame.image.load(r'assets\gfx\arrowrightidle.png')
+            arrowleft_rect = arrowleft.get_rect()
+            arrowright_rect = arrowright.get_rect()
+            arrowleft_rect.centery = screensize[1]//2
+            arrowright_rect.centery = screensize[1]//2
+            arrowleft_rect.left = 10
+            arrowright_rect.right = screensize[0]-10
+            mouse = pygame.mouse.get_pos()
+            if arrowleft_rect.left <= mouse[0] <= arrowleft_rect.right and arrowleft_rect.top <= mouse[1] <= arrowleft_rect.bottom:
+                arrowleft = pygame.image.load(r'assets\gfx\arrowlefthover.png')
+            else:
+                arrowleft = pygame.image.load(r'assets\gfx\arrowleftidle.png')
+            if arrowright_rect.left <= mouse[0] <= arrowright_rect.right and arrowright_rect.top <= mouse[1] <= arrowright_rect.bottom:
+                arrowright = pygame.image.load(r'assets\gfx\arrowrighthover.png')
+            else:
+                arrowright = pygame.image.load(r'assets\gfx\arrowrightidle.png')
+            screen.blit(arrowleft, arrowleft_rect)
+            screen.blit(arrowright, arrowright_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.VIDEORESIZE:
+                    width, height = eve.size
+                    if width < 750:
+                        width = 750
+                    if height < 500:
+                        height = 500
+                    pygame.display.set_mode((width, height), pygame.RESIZABLE)
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if arrowleft_rect.left <= mouse[0] <= arrowleft_rect.right and arrowleft_rect.top <= mouse[1] <= arrowleft_rect.bottom:
+                        outfitsMenu.collectionmenu(screen, sessionpacket)
+                    if arrowright_rect.left <= mouse[0] <= arrowright_rect.right and arrowright_rect.top <= mouse[1] <= arrowright_rect.bottom:
+                        outfitsMenu.customizemenu(screen, sessionpacket)
+
+    def customizemenu(screen, sessionpacket):
+        while True:
+            screen.fill((26, 26, 26))
+            screensize = screen.get_size()
+            main_rect = pygame.Rect(100, 100, screensize[0]-200, screensize[1]-200)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=main_rect.height//10)
+
+            header_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', main_rect.height//10)
+            header_text = header_font.render('customize', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+
+            arrowleft = pygame.image.load(r'assets\gfx\arrowleftidle.png')
+            arrowright = pygame.image.load(r'assets\gfx\arrowrightidle.png')
+            arrowleft_rect = arrowleft.get_rect()
+            arrowright_rect = arrowright.get_rect()
+            arrowleft_rect.centery = screensize[1]//2
+            arrowright_rect.centery = screensize[1]//2
+            arrowleft_rect.left = 10
+            arrowright_rect.right = screensize[0]-10
+
+            # four buttons: style (red), swimsuits (blue), headwear (green), shoes (yellow)
+
+            buttonwidth = (main_rect.right-main_rect.left-50-25)//2
+            buttonheight = (main_rect.bottom-header_rect.bottom-50-25)//2
+
+            style_border = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            style_border.top = header_rect.bottom+25
+            style_border.left = main_rect.left+25
+            pygame.draw.rect(screen, (78, 78, 78), style_border, border_radius=style_border.height//10)
+
+            swimsuits_border = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            swimsuits_border.top = header_rect.bottom+25
+            swimsuits_border.right = main_rect.right-25
+            pygame.draw.rect(screen, (78, 78, 78), swimsuits_border, border_radius=swimsuits_border.height//10)
+
+            headwear_border = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            headwear_border.bottom = main_rect.bottom-25
+            headwear_border.left = main_rect.left+25
+            pygame.draw.rect(screen, (78, 78, 78), headwear_border, border_radius=headwear_border.height//10)
+
+            shoes_border = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            shoes_border.bottom = main_rect.bottom-25
+            shoes_border.right = main_rect.right-25
+            pygame.draw.rect(screen, (78, 78, 78), shoes_border, border_radius=shoes_border.height//10)
+
+            style_button = pygame.Rect(0, 0, buttonwidth-20, buttonheight-20)
+            swimsuits_button = pygame.Rect(0, 0, buttonwidth-20, buttonheight-20)
+            headwear_button = pygame.Rect(0, 0, buttonwidth-20, buttonheight-20)
+            shoes_button = pygame.Rect(0, 0, buttonwidth-20, buttonheight-20)
+
+            style_button.center = style_border.center
+            swimsuits_button.center = swimsuits_border.center
+            headwear_button.center = headwear_border.center
+            shoes_button.center = shoes_border.center
+
+            pygame.draw.rect(screen, (0, 229, 229), style_button, border_radius=style_button.height//10)
+            pygame.draw.rect(screen, (0, 229, 229), swimsuits_button, border_radius=swimsuits_button.height//10)
+            pygame.draw.rect(screen, (0, 229, 229), headwear_button, border_radius=headwear_button.height//10)
+            pygame.draw.rect(screen, (0, 229, 229), shoes_button, border_radius=shoes_button.height//10)
+
+            mouse = pygame.mouse.get_pos()
+            if arrowleft_rect.left <= mouse[0] <= arrowleft_rect.right and arrowleft_rect.top <= mouse[1] <= arrowleft_rect.bottom:
+                arrowleft = pygame.image.load(r'assets\gfx\arrowlefthover.png')
+            else:
+                arrowleft = pygame.image.load(r'assets\gfx\arrowleftidle.png')
+            if arrowright_rect.left <= mouse[0] <= arrowright_rect.right and arrowright_rect.top <= mouse[1] <= arrowright_rect.bottom:
+                arrowright = pygame.image.load(r'assets\gfx\arrowrighthover.png')
+            else:
+                arrowright = pygame.image.load(r'assets\gfx\arrowrightidle.png')
+
+            if 10 <= mouse[0] <= 90 and 10 <= mouse[1] <= 90:
+                homeicon = pygame.image.load(r'assets\gfx\homehover.png')
+            else:
+                homeicon = pygame.image.load(r'assets\gfx\homeidle.png')
+
+            if style_button.left <= mouse[0] <= style_button.right and style_button.top <= mouse[1] <= style_button.bottom:
+                pygame.draw.rect(screen, (209, 132, 115), style_button, border_radius=style_button.height//10)
+            else:
+                pygame.draw.rect(screen, (211, 100, 75), style_button, border_radius=style_button.height//10)
+            if swimsuits_button.left <= mouse[0] <= swimsuits_button.right and swimsuits_button.top <= mouse[1] <= swimsuits_button.bottom:
+                pygame.draw.rect(screen, (135, 201, 176), swimsuits_button, border_radius=swimsuits_button.height//10)
+            else:
+                pygame.draw.rect(screen, (95, 204, 160), swimsuits_button, border_radius=swimsuits_button.height//10)
+            if headwear_button.left <= mouse[0] <= headwear_button.right and headwear_button.top <= mouse[1] <= headwear_button.bottom:
+                pygame.draw.rect(screen, (132, 180, 111), headwear_button, border_radius=swimsuits_button.height//10)
+            else:
+                pygame.draw.rect(screen, (102, 185, 63), headwear_button, border_radius=swimsuits_button.height//10)
+            if shoes_button.left <= mouse[0] <= shoes_button.right and shoes_button.top <= mouse[1] <= shoes_button.bottom:
+                pygame.draw.rect(screen, (209, 203, 115), shoes_button, border_radius=swimsuits_button.height//10)
+            else:
+                pygame.draw.rect(screen, (211, 200, 75), shoes_button, border_radius=swimsuits_button.height//10)
+
+            button_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', style_button.height//3)
+
+            style_text = button_font.render('style', True, (229, 229, 229))
+            style_text_rect = style_text.get_rect()
+            style_text_rect.center = style_button.center
+            screen.blit(style_text, style_text_rect)
+
+            swimsuits_text = button_font.render('swimsuits', True, (229, 229, 229))
+            swimsuits_text_rect = swimsuits_text.get_rect()
+            swimsuits_text_rect.center = swimsuits_button.center
+            screen.blit(swimsuits_text, swimsuits_text_rect)
+
+            headwear_text = button_font.render('headwear', True, (229, 229, 229))
+            headwear_text_rect = headwear_text.get_rect()
+            headwear_text_rect.center = headwear_button.center
+            screen.blit(headwear_text, headwear_text_rect)
+
+            shoes_text = button_font.render('shoes', True, (229, 229, 229))
+            shoes_text_rect = shoes_text.get_rect()
+            shoes_text_rect.center = shoes_button.center
+            screen.blit(shoes_text, shoes_text_rect)
+
+            screen.blit(arrowleft, arrowleft_rect)
+            screen.blit(arrowright, arrowright_rect)
+            screen.blit(homeicon, (15, 15))
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.VIDEORESIZE:
+                    width, height = eve.size
+                    if width < 750:
+                        width = 750
+                    if height < 500:
+                        height = 500
+                    pygame.display.set_mode((width, height), pygame.RESIZABLE)
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if arrowleft_rect.left <= mouse[0] <= arrowleft_rect.right and arrowleft_rect.top <= mouse[1] <= arrowleft_rect.bottom:
+                        outfitsMenu.shopmenu(screen, sessionpacket)
+                    if arrowright_rect.left <= mouse[0] <= arrowright_rect.right and arrowright_rect.top <= mouse[1] <= arrowright_rect.bottom:
+                        outfitsMenu.collectionmenu(screen, sessionpacket)
+
+    def collectionmenu(screen, sessionpacket):
+        while True:
+            screen.fill((26, 26, 26))
+            screensize = screen.get_size()
+            main_rect = pygame.Rect(100, 100, screensize[0]-200, screensize[1]-200)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=main_rect.height//10)
+
+            header_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', main_rect.height//10)
+            header_text = header_font.render('collection', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+
+            arrowleft = pygame.image.load(r'assets\gfx\arrowleftidle.png')
+            arrowright = pygame.image.load(r'assets\gfx\arrowrightidle.png')
+            arrowleft_rect = arrowleft.get_rect()
+            arrowright_rect = arrowright.get_rect()
+            arrowleft_rect.centery = screensize[1]//2
+            arrowright_rect.centery = screensize[1]//2
+            arrowleft_rect.left = 10
+            arrowright_rect.right = screensize[0]-10
+            mouse = pygame.mouse.get_pos()
+            if arrowleft_rect.left <= mouse[0] <= arrowleft_rect.right and arrowleft_rect.top <= mouse[1] <= arrowleft_rect.bottom:
+                arrowleft = pygame.image.load(r'assets\gfx\arrowlefthover.png')
+            else:
+                arrowleft = pygame.image.load(r'assets\gfx\arrowleftidle.png')
+            if arrowright_rect.left <= mouse[0] <= arrowright_rect.right and arrowright_rect.top <= mouse[1] <= arrowright_rect.bottom:
+                arrowright = pygame.image.load(r'assets\gfx\arrowrighthover.png')
+            else:
+                arrowright = pygame.image.load(r'assets\gfx\arrowrightidle.png')
+            screen.blit(arrowleft, arrowleft_rect)
+            screen.blit(arrowright, arrowright_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.VIDEORESIZE:
+                    width, height = eve.size
+                    if width < 750:
+                        width = 750
+                    if height < 500:
+                        height = 500
+                    pygame.display.set_mode((width, height), pygame.RESIZABLE)
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if arrowleft_rect.left <= mouse[0] <= arrowleft_rect.right and arrowleft_rect.top <= mouse[1] <= arrowleft_rect.bottom:
+                        outfitsMenu.customizemenu(screen, sessionpacket)
+                    if arrowright_rect.left <= mouse[0] <= arrowright_rect.right and arrowright_rect.top <= mouse[1] <= arrowright_rect.bottom:
+                        outfitsMenu.shopmenu(screen, sessionpacket)
+
+class playMenu():
+    def volleyballmenu():
+        pass # loads the menu where you can start a beach volleyball match
+
+    def frisbeemenu():
+        pass # loads the menu where you can start a ultimate frisbee match
+
+    def foursquaremenu():
+        pass # loads the menu where you can start a four square match
+
+    def cornholemenu():
+        pass # loads the menu where you can start a cornhole match
+
+    def soccermenu():
+        pass # loads the menu where you can start a beach soccer match
+
+    def tugofwarmenu():
+        pass # loads the menu where you can start a tug of war match
+
+    def dodgeballmenu():
+        pass # loads the menu where you can start a dodgeball match
+
+    def dartsmenu():
+        pass # loads the menu where you can start a sands darts match
+
+    def comingmenu():
+        pass # loads the placeholder menu that is in place of upcoming games
+
+class optionsMenu():
+    def loadoptions(screen, sessionpacket):
+        pass # loads the menu with the six main options: music & sounds, graphics, controls, account, social, logout (dev tools in place of log out if account is admin/dev)
+        while True:
+            screen.fill((26, 26, 26))
+            screensize = screen.get_size()
+            main_rect = pygame.Rect(100, 100, screensize[0]-200, screensize[1]-200)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=main_rect.height//10)
+            header_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', main_rect.height//10)
+            header_text = header_font.render('options', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+
+            alltags = list(dict(credentials.find_one(username=sessionpacket[1])).values())[7]
+            if 'dev' in alltags:
+                sb_text = 'dev tools'
+                sb_hover = (209, 203, 115)
+                sb_idle = (211, 200, 75)
+            else:
+                sb_text = 'log out'
+                sb_hover = (104, 104, 104)
+                sb_idle = (78, 78, 78)
+
+            buttonheight = (main_rect.bottom-header_rect.bottom-100)//3
+            buttonwidth = (main_rect.right-main_rect.left-50-25)//2
+
+            audio_button = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            graphics_button = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            controls_button = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            account_button = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            social_button = pygame.Rect(0, 0, buttonwidth, buttonheight)
+            logout_button = pygame.Rect(0, 0, buttonwidth, buttonheight)
+
+            audio_button.top = header_rect.bottom+25
+            graphics_button.top = header_rect.bottom+25
+            controls_button.top = audio_button.bottom+25
+            account_button.top = graphics_button.bottom+25
+            social_button.top = controls_button.bottom+25
+            logout_button.top = account_button.bottom+25
+
+            audio_button.left = main_rect.left+25
+            graphics_button.right = main_rect.right-25
+            controls_button.left = main_rect.left+25
+            account_button.right = main_rect.right-25
+            social_button.left = main_rect.left+25
+            logout_button.right = main_rect.right-25
+
+            mouse = pygame.mouse.get_pos()
+
+            if audio_button.left <= mouse[0] <= audio_button.right and audio_button.top <= mouse[1] <= audio_button.bottom:
+                pygame.draw.rect(screen, (104, 104, 104), audio_button, border_radius=audio_button.height//10)
+            else:
+                pygame.draw.rect(screen, (78, 78, 78), audio_button, border_radius=audio_button.height//10)
+            
+            if graphics_button.left <= mouse[0] <= graphics_button.right and graphics_button.top <= mouse[1] <= graphics_button.bottom:
+                pygame.draw.rect(screen, (104, 104, 104), graphics_button, border_radius=graphics_button.height//10)
+            else:
+                pygame.draw.rect(screen, (78, 78, 78), graphics_button, border_radius=graphics_button.height//10)
+            
+            if controls_button.left <= mouse[0] <= controls_button.right and controls_button.top <= mouse[1] <= controls_button.bottom:
+                pygame.draw.rect(screen, (104, 104, 104), controls_button, border_radius=controls_button.height//10)
+            else:
+                pygame.draw.rect(screen, (78, 78, 78), controls_button, border_radius=controls_button.height//10)
+            
+            if account_button.left <= mouse[0] <= account_button.right and account_button.top <= mouse[1] <= account_button.bottom:
+                pygame.draw.rect(screen, (104, 104, 104), account_button, border_radius=account_button.height//10)
+            else:
+                pygame.draw.rect(screen, (78, 78, 78), account_button, border_radius=account_button.height//10)
+            
+            if social_button.left <= mouse[0] <= social_button.right and social_button.top <= mouse[1] <= social_button.bottom:
+                pygame.draw.rect(screen, (104, 104, 104), social_button, border_radius=social_button.height//10)
+            else:
+                pygame.draw.rect(screen, (78, 78, 78), social_button, border_radius=social_button.height//10)
+            
+            if logout_button.left <= mouse[0] <= logout_button.right and logout_button.top <= mouse[1] <= logout_button.bottom:
+                pygame.draw.rect(screen, sb_hover, logout_button, border_radius=logout_button.height//10)
+            else:
+                pygame.draw.rect(screen, sb_idle, logout_button, border_radius=logout_button.height//10)
+
+            #pygame.draw.rect(screen, (78, 78, 78), audio_button, border_radius=audio_button.height//10)
+            #pygame.draw.rect(screen, (78, 78, 78), graphics_button, border_radius=graphics_button.height//10)
+            #pygame.draw.rect(screen, (78, 78, 78), controls_button, border_radius=controls_button.height//10)
+            #pygame.draw.rect(screen, (78, 78, 78), account_button, border_radius=account_button.height//10)
+            #pygame.draw.rect(screen, (78, 78, 78), social_button, border_radius=social_button.height//10)
+            #pygame.draw.rect(screen, (78, 78, 78), logout_button, border_radius=logout_button.height//10)
+
+            button_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', audio_button.height//3)
+
+            audio_text = button_font.render('music and sounds', True, (229, 229, 229))
+            graphics_text = button_font.render('graphics', True, (229, 229, 229))
+            controls_text = button_font.render('controls', True, (229, 229, 229))
+            account_text = button_font.render('account settings', True, (229, 229, 229))
+            social_text = button_font.render('social menu', True, (229, 229, 229))
+            logout_text = button_font.render(sb_text, True, (229, 229, 229))
+
+            audio_text_rect = audio_text.get_rect()
+            graphics_text_rect = graphics_text.get_rect()
+            controls_text_rect = controls_text.get_rect()
+            account_text_rect = account_text.get_rect()
+            social_text_rect = social_text.get_rect()
+            logout_text_rect = logout_text.get_rect()
+
+            audio_text_rect.center = audio_button.center
+            graphics_text_rect.center = graphics_button.center
+            controls_text_rect.center = controls_button.center
+            account_text_rect.center = account_button.center
+            social_text_rect.center = social_button.center
+            logout_text_rect.center = logout_button.center
+            
+            screen.blit(audio_text, audio_text_rect)
+            screen.blit(graphics_text, graphics_text_rect)
+            screen.blit(controls_text, controls_text_rect)
+            screen.blit(account_text, account_text_rect)
+            screen.blit(social_text, social_text_rect)
+            screen.blit(logout_text, logout_text_rect)
+             
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.VIDEORESIZE:
+                    width, height = eve.size
+                    if width < 750:
+                        width = 750
+                    if height < 500:
+                        height = 500
+                    pygame.display.set_mode((width, height), pygame.RESIZABLE)
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if logout_button.left <= mouse[0] <= logout_button.right and logout_button.top <= mouse[1] <= logout_button.bottom:
+                        if sb_text == 'dev tools':
+                            optionsMenu.granttagui1(screen, sessionpacket)
+                        else:
+                            optionsMenu.confirmlogout(screen, sessionpacket)
+
+    def confirmlogout(screen, sessionpacket):
+        while True:
+            screen.fill((26, 26, 26))
+            screensize = screen.get_size()
+            main_rect = pygame.Rect(100, 100, screensize[0]-200, screensize[1]-200)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=main_rect.height//10)
+            header_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', main_rect.height//10)
+            header_text = header_font.render('are you sure?', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            buttonzone = pygame.Rect(header_rect.left, header_rect.bottom+25, header_rect.width, (main_rect.bottom-25)-(header_rect.bottom+25))
+            back_button = pygame.Rect(0, 0, (main_rect.width-75)//2, buttonzone.height//2) # pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, (main_rect.width-75)//2, buttonzone.height//2)
+            back_button.left = main_rect.left+25
+            confirm_button.right = main_rect.right-25
+            back_button.centery = buttonzone.centery
+            confirm_button.centery = buttonzone.centery
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            #screen.blit(header_text, (back_button.left, back_button.top-25-header_rect.height))
+            #pygame.draw.rect(screen, (0, 255, 255), buttonzone, border_radius=buttonzone.height//10)
+            backr_button = pygame.Rect(0, 0, back_button.width-20, confirm_button.height-20)
+            confirmr_button = pygame.Rect(0, 0, confirm_button.width-20, confirm_button.height-20)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', confirmr_button.height//4)
+            back_text = main_font.render('no, return to options', True, (229, 229, 229))
+            confirm_text = main_font.render('yes, log me out', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.VIDEORESIZE:
+                    width, height = eve.size
+                    if width < 750:
+                        width = 750
+                    if height < 500:
+                        height = 500
+                    pygame.display.set_mode((width, height), pygame.RESIZABLE)
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        optionsMenu.loadoptions(screen, sessionpacket)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        playerPortal.mainportal(screen)
+
+    def devoptions1():
+        pass # loads the menu with the first six dev options: manage tags, grant tag, ban user, unban user, manage versions, manage cosmetics
+
+    def devoptions2():
+        pass # loads the menu with the second five dev options: manage events, post blog, manage leagues, logout, back to main
+
+    def managetagsui():
+        pass # loads the menu where you can create, delete, or manage tags
+
+    def granttagui1(screen, sessionpacket):
+        username_input = ''
+        error_code = ''
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render('which user would you like to give a tag?', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render('confirm', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        if list(credentials.find(username=username_input)) == []:
+                            error_code = 'there is no account with this username.'
+                        else:
+                            print(credentials.find(username=username_input))
+                            optionsMenu.granttagui2(screen, sessionpacket, username_input)
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '_']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        optionsMenu.loadoptions(screen, sessionpacket)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        if list(credentials.find(username=username_input)) == []:
+                            error_code = 'there is no account with this username.'
+                        else:
+                            optionsMenu.granttagui2(screen, sessionpacket, username_input)
+
+    def granttagui2(screen, sessionpacket, username):
+        username_input = ''
+        error_code = ''
+        tag_list = ['dev', 'artist', 'alohaz', 'miah']
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render(f'what tag would you like to give @{username}?', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render('confirm', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        if username_input in tag_list:
+                            optionsMenu.granttagui3(screen, sessionpacket, username, username_input)
+                        else:
+                            error_code = 'this tag does not exist.'
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '_']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        optionsMenu.granttagui1(screen, sessionpacket)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        if username_input in tag_list:
+                            optionsMenu.granttagui3(screen, sessionpacket, username, username_input)
+                        else:
+                            error_code = 'this tag does not exist.'
+
+    def granttagui3(screen, sessionpacket, username, tag):
+        username_input = ''
+        error_code = ''
+        while True:
+            screen.fill((26, 26, 26))
+            main_rect = pygame.Rect(0, 0, 550, 300)
+            main_rect.topleft = (100, 100)
+            pygame.draw.rect(screen, (52, 52, 52), main_rect, border_radius=25)
+            main_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 25)
+            header_text = main_font.render('to confirm, type in the PIN code.', True, (229, 229, 229))
+            header_rect = header_text.get_rect()
+            header_rect.topleft = (main_rect.left+25, main_rect.top+25)
+            screen.blit(header_text, header_rect)
+            text_box = pygame.Rect(0, 0, 500, 75)
+            text_box.topleft = (125, header_rect.bottom+25)
+            pygame.draw.rect(screen, (78, 78, 78), text_box, border_radius=15)
+            username_text = main_font.render(username_input, True, (229, 229, 229))
+            username_rect = username_text.get_rect()
+            username_rect.left = text_box.left+25
+            username_rect.centery = text_box.centery
+            screen.blit(username_text, username_rect)
+            error_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', 15)
+            error_text = error_font.render(error_code, True, (219, 82, 72))
+            error_rect = error_text.get_rect()
+            error_rect.left = text_box.left
+            error_rect.top = text_box.bottom+2
+            screen.blit(error_text, error_rect)
+            back_button = pygame.Rect(0, 0, 238, 94)
+            confirm_button = pygame.Rect(0, 0, 238, 94)
+            back_button.left = text_box.left
+            confirm_button.right = text_box.right
+            back_button.top = text_box.bottom+25
+            confirm_button.top = text_box.bottom+25
+            pygame.draw.rect(screen, (78, 78, 78), back_button, border_radius=10)
+            pygame.draw.rect(screen, (78, 78, 78), confirm_button, border_radius=10)
+            backr_button = pygame.Rect(0, 0, 218, 74)
+            confirmr_button = pygame.Rect(0, 0, 218, 74)
+            backr_button.center = back_button.center
+            confirmr_button.center = confirm_button.center
+            mouse = pygame.mouse.get_pos()
+            if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                pygame.draw.rect(screen, (130, 130, 130), backr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (104, 104, 104), backr_button, border_radius=10)
+
+            if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                pygame.draw.rect(screen, (76, 194, 108), confirmr_button, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 168, 82), confirmr_button, border_radius=10)
+            back_text = main_font.render('back', True, (229, 229, 229))
+            confirm_text = main_font.render('confirm', True, (229, 229, 229))
+            back_text_rect = back_text.get_rect()
+            confirm_text_rect = confirm_text.get_rect()
+            back_text_rect.center = back_button.center
+            confirm_text_rect.center = confirm_button.center
+            screen.blit(back_text, back_text_rect)
+            screen.blit(confirm_text, confirm_text_rect)
+            pygame.display.update()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    pygame.quit()
+                    quit() # delete this
+                elif eve.type == pygame.KEYDOWN:
+                    if eve.key == pygame.K_BACKSPACE:
+                        username_input = username_input[:-1]
+                        error_code = ''
+                    elif eve.key == pygame.K_RETURN:
+                        if username_input == '5487':
+                            devTools.assigntag(screen, sessionpacket, username, tag)
+                        else:
+                            error_code = 'invalid PIN code.'
+                    else:
+                        if eve.unicode in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '_']:
+                            username_input += eve.unicode
+                            error_code = ''
+                elif eve.type == pygame.MOUSEBUTTONDOWN:
+                    if backr_button.left <= mouse[0] <= backr_button.right and backr_button.top <= mouse[1] <= backr_button.bottom:
+                        optionsMenu.granttagui2(screen, sessionpacket, username)
+                    if confirmr_button.left <= mouse[0] <= confirmr_button.right and confirmr_button.top <= mouse[1] <= confirmr_button.bottom:
+                        if username_input == '5487':
+                            devTools.assigntag(screen, sessionpacket, username, tag)
+                        else:
+                            error_code = 'invalid PIN code.'
+
+# functions
+
+# console
+
+serverSide.loadwindow()
