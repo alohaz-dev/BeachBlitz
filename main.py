@@ -105,11 +105,27 @@ class whiteBoard():
             profile_ui_rect.left = level_ui_rect.right+screensize[1]//18
             screen.blit(profile_ui_scaled, profile_ui_rect)
 
-            friends_ui = pygame.image.load(r'assets\gfx\profile_ui.png')
-            friends_ui_scaled = pygame.transform.scale(profile_ui, (screensize[1]//18, screensize[1]//18))
+            buttonside = (gem_ui_rect.right-title_rect.right-screensize[1]//18*2-10)//3
+
+            waffle_ui = pygame.image.load(r'assets\gfx\waffle_ui.png')
+            waffle_ui_scaled = pygame.transform.scale(waffle_ui, (buttonside, buttonside))
+            waffle_ui_rect = waffle_ui_scaled.get_rect()
+            waffle_ui_rect.top = screensize[1]//18*3
+            waffle_ui_rect.right = gem_ui_rect.right
+            screen.blit(waffle_ui_scaled, waffle_ui_rect)
+
+            news_ui = pygame.image.load(r'assets\gfx\news_ui.png')
+            news_ui_scaled = pygame.transform.scale(news_ui, (buttonside, buttonside))
+            news_ui_rect = news_ui_scaled.get_rect()
+            news_ui_rect.top = screensize[1]//18*3
+            news_ui_rect.right = waffle_ui_rect.left-10
+            screen.blit(news_ui_scaled, news_ui_rect)
+
+            friends_ui = pygame.image.load(r'assets\gfx\friends_ui.png')
+            friends_ui_scaled = pygame.transform.scale(friends_ui, (buttonside, buttonside))
             friends_ui_rect = friends_ui_scaled.get_rect()
-            friends_ui_rect.top = screensize[1]//18
-            friends_ui_rect.left = level_ui_rect.right+screensize[1]//18
+            friends_ui_rect.top = screensize[1]//18*3
+            friends_ui_rect.right = news_ui_rect.left-10
             screen.blit(friends_ui_scaled, friends_ui_rect)
 
             pygame.display.update()
