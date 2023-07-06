@@ -42,13 +42,13 @@ class whiteBoard():
             pygame.font.init()
             screensize = screen.get_size()
             title_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', screensize[1]//6)
-            title_text = title_font.render('beach blitz', True, (229, 229, 229))
+            title_text = title_font.render('Beach Blitz', True, (229, 229, 229))
             title_rect = title_text.get_rect()
             title_rect.centerx = screensize[0]//2
             title_rect.top = screensize[1]//6
 
             subtitle_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', screensize[1]//18)
-            subtitle = 'developer mode'
+            subtitle = 'Developer Mode'
             subtitle_color = (255, 226, 96)
             subtitle_text = subtitle_font.render(subtitle, True, subtitle_color)
             subtitle_rect = subtitle_text.get_rect()
@@ -143,6 +143,8 @@ class whiteBoard():
             quests_ui_rect.top = friends_ui_rect.bottom+screensize[1]//18-18
             quests_ui_rect.left = friends_ui_rect.left
             screen.blit(quests_ui_scaled, quests_ui_rect)
+
+            pass_border = None # pygame.Rect()
 
             pygame.display.update()
             for eve in pygame.event.get():
