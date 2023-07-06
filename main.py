@@ -77,6 +77,41 @@ class whiteBoard():
             pygame.draw.rect(screen, (52, 52, 52), play_border, border_radius=play_border.height//10)
             pygame.draw.rect(screen, (52, 52, 52), clubs_border, border_radius=clubs_border.height//10)
 
+            level_ui = pygame.image.load(r'assets\gfx\level_ui.png')
+            level_ui_scaled = pygame.transform.scale(level_ui, (screensize[1]//18*3, screensize[1]//18))
+            level_ui_rect = level_ui_scaled.get_rect()
+            level_ui_rect.top = screensize[1]//18
+            level_ui_rect.left = screensize[1]//18
+            screen.blit(level_ui_scaled, level_ui_rect)
+
+            gem_ui = pygame.image.load(r'assets\gfx\gem_ui.png')
+            gem_ui_scaled = pygame.transform.scale(gem_ui, (screensize[1]//18*3, screensize[1]//18))
+            gem_ui_rect = gem_ui_scaled.get_rect()
+            gem_ui_rect.top = screensize[1]//18
+            gem_ui_rect.right = screensize[0]-screensize[1]//18
+            screen.blit(gem_ui_scaled, gem_ui_rect)
+
+            coin_ui = pygame.image.load(r'assets\gfx\coin_ui.png')
+            coin_ui_scaled = pygame.transform.scale(coin_ui, (screensize[1]//18*3, screensize[1]//18))
+            coin_ui_rect = coin_ui_scaled.get_rect()
+            coin_ui_rect.top = screensize[1]//18
+            coin_ui_rect.right = gem_ui_rect.left-screensize[1]//18
+            screen.blit(coin_ui_scaled, coin_ui_rect)
+
+            profile_ui = pygame.image.load(r'assets\gfx\profile_ui.png')
+            profile_ui_scaled = pygame.transform.scale(profile_ui, (screensize[1]//18, screensize[1]//18))
+            profile_ui_rect = profile_ui_scaled.get_rect()
+            profile_ui_rect.top = screensize[1]//18
+            profile_ui_rect.left = level_ui_rect.right+screensize[1]//18
+            screen.blit(profile_ui_scaled, profile_ui_rect)
+
+            friends_ui = pygame.image.load(r'assets\gfx\profile_ui.png')
+            friends_ui_scaled = pygame.transform.scale(profile_ui, (screensize[1]//18, screensize[1]//18))
+            friends_ui_rect = friends_ui_scaled.get_rect()
+            friends_ui_rect.top = screensize[1]//18
+            friends_ui_rect.left = level_ui_rect.right+screensize[1]//18
+            screen.blit(friends_ui_scaled, friends_ui_rect)
+
             pygame.display.update()
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
@@ -85,4 +120,4 @@ class whiteBoard():
 
 # startup
 
-#whiteBoard.main_menu()
+whiteBoard.main_menu()
