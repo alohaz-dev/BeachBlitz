@@ -128,6 +128,22 @@ class whiteBoard():
             friends_ui_rect.right = news_ui_rect.left-10
             screen.blit(friends_ui_scaled, friends_ui_rect)
 
+            circle_buttons_size = (waffle_ui_rect.right-friends_ui_rect.left-20)//2
+
+            banners_ui = pygame.image.load(r'assets\gfx\banners_ui.png')
+            banners_ui_scaled = pygame.transform.scale(banners_ui, (circle_buttons_size, circle_buttons_size))
+            banners_ui_rect = banners_ui_scaled.get_rect()
+            banners_ui_rect.top = waffle_ui_rect.bottom+screensize[1]//18-18
+            banners_ui_rect.right = waffle_ui_rect.right
+            screen.blit(banners_ui_scaled, banners_ui_rect)
+
+            quests_ui = pygame.image.load(r'assets\gfx\quests_ui.png')
+            quests_ui_scaled = pygame.transform.scale(quests_ui, (circle_buttons_size, circle_buttons_size))
+            quests_ui_rect = quests_ui_scaled.get_rect()
+            quests_ui_rect.top = friends_ui_rect.bottom+screensize[1]//18-18
+            quests_ui_rect.left = friends_ui_rect.left
+            screen.blit(quests_ui_scaled, quests_ui_rect)
+
             pygame.display.update()
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
