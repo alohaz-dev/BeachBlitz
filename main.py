@@ -206,11 +206,10 @@ class mainMenu():
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
                     pygame.quit()
-                    quit()
+                    #quit()
                 if eve.type == pygame.MOUSEBUTTONDOWN:
                     if play_button.left <= mouse[0] <= play_button.right and play_button.top <= mouse[1] <= play_button.bottom:
-                        #playMenu.tug_of_war(screen, session_id)
-                        pass
+                        playMenu.tug_of_war(screen, session_id)
 
 class whiteBoard():
     def main_menu(screen, session_id):
@@ -380,11 +379,11 @@ class playMenu():
     def tug_of_war(screen, session_id):
         while True:
             screen.fill(darkgrey)
-            pyagme.display.update()
+            pygame.display.update()
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
                     pygame.quit()
-                    quit()
+                    #quit()
 
     def coming_soon_ph(screen, session_id): # the placeholder for a new games
         pass
