@@ -379,11 +379,24 @@ class playMenu():
     def tug_of_war(screen, session_id):
         while True:
             screen.fill(darkgrey)
+            screensize = screen.get_size()
+            main_rect = pygame.Rect(100, 100, screensize[0]-200, screensize[1]-200)
+            pygame.draw.rect(screen, darkgrey1, main_rect, border_radius=main_rect.h//10)
+            arrow_left_ui = pygame.image.load(r'assets\gfx\arrow_left_ui.png')
+            arrow_left_ui_rect = arrow_left_ui.get_rect()
+            arrow_left_ui_rect.centery = main_rect.centery
+            arrow_left_ui_rect.left = 0
+            screen.blit(arrow_left_ui, arrow_left_ui_rect)
+            arrow_right_ui = pygame.image.load(r'assets\gfx\arrow_right_ui.png')
+            arrow_right_ui_rect = arrow_right_ui.get_rect()
+            arrow_right_ui_rect.centery = main_rect.centery
+            arrow_right_ui_rect.right = screensize[0]
+            screen.blit(arrow_right_ui, arrow_right_ui_rect)
             pygame.display.update()
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
                     pygame.quit()
-                    #quit()
+                    quit()
 
     def coming_soon_ph(screen, session_id): # the placeholder for a new games
         pass
