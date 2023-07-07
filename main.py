@@ -6,8 +6,31 @@ import pygame
 
 # colours
 
-# code
+greenidle = (47, 151, 95) 
+greenhover = (73, 177, 121) 
 
+green2idle = (102, 185, 63)
+green2hover = (132, 180, 111)
+
+blueidle = (95, 204, 161)
+bluehover = (135, 201, 176)
+
+redidle = (211, 101, 75)
+redhover = (209, 133, 115)
+
+smoothwhite = (229, 229, 229)
+toothpaste = (206, 206, 206)
+darkgrey = (26, 26, 26)
+darkgrey1 = (52, 52, 52)
+darkgrey2 = (78, 78, 78)
+darkgrey3 = (104, 104, 104)
+darkgrey4 = (130, 130, 130)
+errorred = (235, 64, 52)
+orchidpurple = (176, 105, 238)
+devyellow = (240, 213, 65)
+ainspink = (224, 56, 87)
+
+# code
 
 class serverSide():
     def load_window():
@@ -42,13 +65,13 @@ class whiteBoard():
             pygame.font.init()
             screensize = screen.get_size()
             title_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', screensize[1]//6)
-            title_text = title_font.render('Beach Blitz', True, (229, 229, 229))
+            title_text = title_font.render('beach blitz', True, (229, 229, 229))
             title_rect = title_text.get_rect()
             title_rect.centerx = screensize[0]//2
             title_rect.top = screensize[1]//6
 
             subtitle_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', screensize[1]//18)
-            subtitle = 'Developer Mode'
+            subtitle = 'developer mode'
             subtitle_color = (255, 226, 96)
             subtitle_text = subtitle_font.render(subtitle, True, subtitle_color)
             subtitle_rect = subtitle_text.get_rect()
@@ -76,6 +99,21 @@ class whiteBoard():
             pygame.draw.rect(screen, (52, 52, 52), outfits_border, border_radius=outfits_border.height//10)
             pygame.draw.rect(screen, (52, 52, 52), play_border, border_radius=play_border.height//10)
             pygame.draw.rect(screen, (52, 52, 52), clubs_border, border_radius=clubs_border.height//10)
+
+            outfits_button = pygame.Rect(0, 0, outfits_border.w-20, outfits_border.h-20)
+            play_button = pygame.Rect(0, 0, play_border.w-20, play_border.h-20)
+            clubs_button = pygame.Rect(0, 0, clubs_border.w-20, clubs_border.h-20)
+
+            outfits_button.center = outfits_border.center
+            play_button.center = play_border.center
+            clubs_button.center = clubs_border.center
+
+            mouse = pygame.mouse.get_pos()
+
+            if outfits_button.left <= mouse[0] <= outfits_button.right and outfits_button.top <= mouse[1] <= outfits_button.bottom:
+                pygame.draw.rect(screen, bluehover, outfits_button, border_radius=outfits_button.height//10)
+            else:
+                pygame.draw.rect(screen, blueidle, outfits_button, border_radius=outfits_button.height//10)
 
             level_ui = pygame.image.load(r'assets\gfx\level_ui.png')
             level_ui_scaled = pygame.transform.scale(level_ui, (screensize[1]//18*3, screensize[1]//18))
