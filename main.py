@@ -211,7 +211,7 @@ class mainMenu():
                     #quit()
                 if eve.type == pygame.MOUSEBUTTONDOWN:
                     if play_button.left <= mouse[0] <= play_button.right and play_button.top <= mouse[1] <= play_button.bottom:
-                        playMenu.tug_of_war(screen, session_id)
+                        playMenu.tug_of_war(screen)
 
 class whiteBoard():
     def main_menu(screen, session_id):
@@ -378,7 +378,7 @@ class whiteBoard():
                         playMenu.tug_of_war(screen, session_id)
 
 class playMenu():
-    def tug_of_war(screen, session_id):
+    def tug_of_war(screen):
         while True:
             screen.fill(darkgrey)
             screensize = screen.get_size()
