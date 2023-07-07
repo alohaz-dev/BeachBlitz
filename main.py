@@ -40,7 +40,7 @@ class serverSide():
 class playerPortal():
     def main_portal(screen):
         while True:
-            screen.fill((26, 26, 26))
+            screen.fill(darkgrey)
             pygame.display.update()
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
@@ -50,7 +50,7 @@ class playerPortal():
 class mainMenu():
     def main_menu(screen, session_id):
         while True:
-            screen.fill((26, 26, 26))
+            screen.fill(darkgrey)
             pygame.display.update()
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
@@ -61,18 +61,18 @@ class whiteBoard():
     def main_menu():
         screen = pygame.display.set_mode((750, 500), pygame.RESIZABLE)
         while True:
-            screen.fill((26, 26, 26))
+            screen.fill(darkgrey)
             pygame.font.init()
             screensize = screen.get_size()
             title_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', screensize[1]//6)
-            title_text = title_font.render('beach blitz', True, (229, 229, 229))
+            title_text = title_font.render('beach blitz', True, smoothwhite)
             title_rect = title_text.get_rect()
             title_rect.centerx = screensize[0]//2
             title_rect.top = screensize[1]//6
 
             subtitle_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', screensize[1]//18)
             subtitle = 'developer mode'
-            subtitle_color = (255, 226, 96)
+            subtitle_color = devyellow
             subtitle_text = subtitle_font.render(subtitle, True, subtitle_color)
             subtitle_rect = subtitle_text.get_rect()
             subtitle_rect.centerx = screensize[0]//2
@@ -96,9 +96,9 @@ class whiteBoard():
             clubs_border.top = screensize[1]//6*3
             clubs_border.left = play_border.right+25
 
-            pygame.draw.rect(screen, (52, 52, 52), outfits_border, border_radius=outfits_border.height//10)
-            pygame.draw.rect(screen, (52, 52, 52), play_border, border_radius=play_border.height//10)
-            pygame.draw.rect(screen, (52, 52, 52), clubs_border, border_radius=clubs_border.height//10)
+            pygame.draw.rect(screen, darkgrey2, outfits_border, border_radius=outfits_border.height//10)
+            pygame.draw.rect(screen, darkgrey2, play_border, border_radius=play_border.height//10)
+            pygame.draw.rect(screen, darkgrey2, clubs_border, border_radius=clubs_border.height//10)
 
             outfits_button = pygame.Rect(0, 0, outfits_border.w-20, outfits_border.h-20)
             play_button = pygame.Rect(0, 0, play_border.w-20, play_border.h-20)
@@ -114,6 +114,34 @@ class whiteBoard():
                 pygame.draw.rect(screen, bluehover, outfits_button, border_radius=outfits_button.height//10)
             else:
                 pygame.draw.rect(screen, blueidle, outfits_button, border_radius=outfits_button.height//10)
+
+            if play_button.left <= mouse[0] <= play_button.right and play_button.top <= mouse[1] <= play_button.bottom:
+                pygame.draw.rect(screen, green2hover, play_button, border_radius=play_button.height//10)
+            else:
+                pygame.draw.rect(screen, green2idle, play_button, border_radius=play_button.height//10)
+
+            if clubs_button.left <= mouse[0] <= clubs_button.right and clubs_button.top <= mouse[1] <= clubs_button.bottom:
+                pygame.draw.rect(screen, redhover, clubs_button, border_radius=clubs_button.height//10)
+            else:
+                pygame.draw.rect(screen, redidle, clubs_button, border_radius=clubs_button.height//10)
+
+            button_font = pygame.font.Font(r'assets\gfx\mainfont.ttf', play_button.height//3)
+
+            outfits_text = button_font.render('outfits', True, smoothwhite)
+            play_text = button_font.render('play', True, smoothwhite)
+            clubs_text = button_font.render('clubs', True, smoothwhite)
+
+            outfits_text_rect = outfits_text.get_rect()
+            play_text_rect = play_text.get_rect()
+            clubs_text_rect = clubs_text.get_rect()
+
+            outfits_text_rect.center = outfits_button.center
+            play_text_rect.center = play_button.center
+            clubs_text_rect.center = clubs_button.center
+
+            screen.blit(outfits_text, outfits_text_rect)
+            screen.blit(play_text, play_text_rect)
+            screen.blit(clubs_text, clubs_text_rect)
 
             level_ui = pygame.image.load(r'assets\gfx\level_ui.png')
             level_ui_scaled = pygame.transform.scale(level_ui, (screensize[1]//18*3, screensize[1]//18))
