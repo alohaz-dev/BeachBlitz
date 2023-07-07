@@ -214,7 +214,7 @@ class mainMenu():
                         playMenu.tug_of_war(screen)
 
 class whiteBoard():
-    def main_menu(screen, session_id):
+    def main_menu(screen):
         screen = pygame.display.set_mode((750, 500), pygame.RESIZABLE)
         while True:
             screen.fill(darkgrey)
@@ -375,7 +375,7 @@ class whiteBoard():
                     quit()
                 if eve.type == pygame.MOUSEBUTTONDOWN:
                     if play_button.left <= mouse[0] <= play_button.right and play_button.top <= mouse[1] <= play_button.bottom:
-                        playMenu.tug_of_war(screen, session_id)
+                        playMenu.tug_of_war(screen)
 
 class playMenu():
     def tug_of_war(screen):
@@ -404,7 +404,7 @@ class playMenu():
                 if eve.type == pygame.MOUSEBUTTONDOWN:
                     mouse = pygame.mouse.get_pos()
                     if 10 <= mouse[0] <= 90 and 10 <= mouse[1] <= 90:
-                        mainMenu.main_menu(screen, session_id)
+                        mainMenu.main_menu(screen)
 
     def coming_soon_ph(screen, session_id): # the placeholder for a new games
         pass
