@@ -34,8 +34,11 @@ ainspink = (224, 56, 87)
 
 class serverSide():
     def load_window():
+        level_ui = pygame.image.load(r'assets\gfx\logo_ui.png')
+        pygame.display.set_caption('Beach Blitz')
+        pygame.display.set_icon(level_ui)
         screen = pygame.display.set_mode((750, 500), pygame.RESIZABLE)
-        playerPortal.main_portal(screen)
+        mainMenu.main_menu(screen)
 
 class playerPortal():
     def main_portal(screen):
@@ -48,8 +51,7 @@ class playerPortal():
                     quit()
 
 class mainMenu():
-    def main_menu(screen, session_id):
-        screen = pygame.display.set_mode((750, 500), pygame.RESIZABLE)
+    def main_menu(screen):
         while True:
             screen.fill(darkgrey)
             pygame.font.init()
@@ -392,17 +394,21 @@ class playMenu():
             arrow_right_ui_rect.centery = main_rect.centery
             arrow_right_ui_rect.right = screensize[0]
             screen.blit(arrow_right_ui, arrow_right_ui_rect)
+            home_ui = pygame.image.load(r'assets\gfx\home_ui.png')
+            screen.blit(home_ui, (0, 0))
             pygame.display.update()
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
                     pygame.quit()
                     quit()
+                if eve.type == pygame.MOUSEBUTTONDOWN:
+                    mouse = pygame.mouse.get_pos()
+                    if 10 <= mouse[0] <= 90 and 10 <= mouse[1] <= 90:
+                        mainMenu.main_menu(screen, session_id)
 
     def coming_soon_ph(screen, session_id): # the placeholder for a new games
         pass
 
 # startup
 
-session_id = 'alohaz-001'
-
-mainMenu.main_menu(None, session_id)
+serverSide.load_window()
